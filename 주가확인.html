@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>회사 주가 검색</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #eef2ff;
+      color: #1f2937;
+    }
+    .container {
+      max-width: 1080px;
+      margin: 40px auto;
+      display: grid;
+      grid-template-columns: 1.7fr 0.9fr;
+      gap: 24px;
+      padding: 24px;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+      padding: 28px;
+      border: 1px solid #e5e7eb;
+    }
+    h1 {
+      margin: 0 0 12px;
+      font-size: 32px;
+      letter-spacing: -0.03em;
+    }
+    .description {
+      margin-bottom: 22px;
+      color: #4b5563;
+      line-height: 1.7;
+    }
+    .search-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    input[type="text"] {
+      flex: 1;
+      min-width: 220px;
+      padding: 14px 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      font-size: 16px;
+    }
+    button {
+      padding: 14px 20px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 700;
+      transition: background-color 0.2s ease;
+    }
+    .primary {
+      background-color: #4f46e5;
+      color: white;
+    }
+    .secondary {
+      background-color: #fbbf24;
+      color: #111827;
+    }
+    .favorite-toggle {
+      width: 56px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #fff;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+    }
+    .favorite-toggle.checked {
+      background-color: #fef3c7;
+      border-color: #f59e0b;
+    }
+    .favorite-toggle span {
+      font-size: 22px;
+    }
+    .info-box {
+      margin-top: 20px;
+      padding: 22px;
+      border-radius: 18px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+    }
+    .symbol-row {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .symbol-title {
+      font-size: 20px;
+      margin: 0;
+    }
+    .symbol-code {
+      color: #6b7280;
+      font-size: 16px;
+    }
+    .price {
+      margin: 18px 0 0;
+      font-size: 48px;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .change-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+    .change-value,
+    .change-percent {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .up {
+      color: #16a34a;
+    }
+    .down {
+      color: #dc2626;
+    }
+    .meta {
+      margin-top: 20px;
+      display: grid;
+      gap: 10px;
+      color: #4b5563;
+      font-size: 15px;
+    }
+    .favorite-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .favorite-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .favorite-header h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .favorite-list {
+      display: grid;
+      gap: 12px;
+    }
+    .favorite-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      background: #ffffff;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .favorite-item:hover {
+      background: #eef2ff;
+    }
+    .favorite-item span {
+      font-weight: 700;
+    }
+    .favorite-item small {
+      color: #6b7280;
+    }
+    .favorite-empty {
+      color: #6b7280;
+      padding: 18px;
+      border-radius: 14px;
+      background: #f8fafc;
+      text-align: center;
+    }
+    .error {
+      margin-top: 20px;
+      color: #b91c1c;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>회사 주가 검색</h1>
+      <p class="description">회사 이름이나 주식 심볼로 검색하여 주가를 조회합니다. 즐겨찾기로 자주 보는 회사는 오른쪽 리스트에 저장해두고 빠르게 다시 검색할 수 있습니다.</p>
+
+      <div class="search-row">
+        <input id="symbolInput" type="text" placeholder="예: 삼성전자, AAPL, MSFT" value="삼성전자" />
+        <button class="primary" onclick="searchStock()">검색</button>
+        <button id="favoriteBtn" class="favorite-toggle" onclick="toggleFavorite()" aria-label="즐겨찾기">
+          <span id="favoriteIcon">☆</span>
+        </button>
+      </div>
+
+      <div class="info-box" id="resultBox" style="display:none;">
+        <div class="symbol-row">
+          <div>
+            <h2 class="symbol-title" id="companyName">-</h2>
+            <div class="symbol-code" id="companyCode">-</div>
+          </div>
+          <div id="favoriteStatus"></div>
+        </div>
+
+        <p class="price" id="companyPrice">-</p>
+        <div class="change-row">
+          <span id="companyChange" class="change-value">-</span>
+          <span id="companyChangePercent" class="change-percent">-</span>
+        </div>
+        <div class="meta">
+          <div>마지막 업데이트: <strong id="companyTime">-</strong></div>
+          <div>데이터 출처: 네이버 금융</div>
+        </div>
+      </div>
+
+      <div id="errorMessage" class="error" style="display:none;"></div>
+    </div>
+
+    <div class="favorite-panel card">
+      <div class="favorite-header">
+        <h2>즐겨찾기</h2>
+        <small>클릭하면 바로 검색</small>
+      </div>
+      <div id="favoriteList" class="favorite-list"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_KEY = 'demo';
+    const STORAGE_KEY = 'stockFavorites';
+    let favorites = [];
+    let currentSymbol = '';
+
+    function loadFavorites() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      favorites = saved ? JSON.parse(saved) : [];
+      renderFavoriteList();
+    }
+
+    function saveFavorites() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
+    }
+
+    function renderFavoriteList() {
+      const list = document.getElementById('favoriteList');
+      list.innerHTML = '';
+      if (favorites.length === 0) {
+        list.innerHTML = '<div class="favorite-empty">즐겨찾기된 회사가 없습니다.</div>';
+        return;
+      }
+      favorites.forEach(symbol => {
+        const item = document.createElement('div');
+        item.className = 'favorite-item';
+        item.innerHTML = `<span>${symbol}</span><small>검색</small>`;
+        item.onclick = () => {
+          document.getElementById('symbolInput').value = symbol;
+          searchStock();
+        };
+        list.appendChild(item);
+      });
+    }
+
+    function formatPrice(value) {
+      return Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
+    function setResultVisible(visible) {
+      document.getElementById('resultBox').style.display = visible ? 'block' : 'none';
+    }
+
+    function showError(message) {
+      const el = document.getElementById('errorMessage');
+      el.textContent = message;
+      el.style.display = 'block';
+    }
+
+    function hideError() {
+      const el = document.getElementById('errorMessage');
+      el.style.display = 'none';
+    }
+
+    function updateFavoriteButton() {
+      const btn = document.getElementById('favoriteBtn');
+      const icon = document.getElementById('favoriteIcon');
+      const isFav = currentSymbol && favorites.includes(currentSymbol);
+      if (isFav) {
+        btn.classList.add('checked');
+        icon.textContent = '★';
+      } else {
+        btn.classList.remove('checked');
+        icon.textContent = '☆';
+      }
+    }
+
+    function toggleFavorite() {
+      const symbol = currentSymbol;
+      if (!symbol) return;
+      const idx = favorites.indexOf(symbol);
+      if (idx === -1) {
+        favorites.unshift(symbol);
+      } else {
+        favorites.splice(idx, 1);
+      }
+      saveFavorites();
+      renderFavoriteList();
+      updateFavoriteButton();
+    }
+
+    async function fetchQuote(symbol) {
+      const url = `http://localhost:8000/api/quote?code=${encodeURIComponent(symbol)}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('데이터 조회에 실패했습니다.');
+      }
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      return {
+        symbol: data.symbol,
+        name: data.name,
+        price: data.price,
+        change: data.change,
+        changePercent: data.changePercent,
+        time: data.timestamp
+      };
+    }
+
+    async function searchStock() {
+      hideError();
+      const symbol = document.getElementById('symbolInput').value.trim().toUpperCase();
+      if (!symbol) {
+        showError('검색할 회사 심볼을 입력하세요.');
+        return;
+      }
+      currentSymbol = symbol;
+      updateFavoriteButton();
+      try {
+        const quote = await fetchQuote(symbol);
+        const name = quote.name;
+        const price = quote.price;
+        const change = quote.change;
+        const changePercent = quote.changePercent;
+        const time = quote.time;
+
+        document.getElementById('companyName').textContent = name;
+        document.getElementById('companyCode').textContent = symbol;
+        document.getElementById('companyPrice').textContent = `${formatPrice(price)}원`;
+        document.getElementById('companyChange').textContent = `${change >= 0 ? '+' : ''}${formatPrice(change)}원`;
+        document.getElementById('companyChangePercent').textContent = `${change >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
+        document.getElementById('companyTime').textContent = time;
+        document.getElementById('favoriteStatus').textContent = favorites.includes(symbol) ? '즐겨찾기 등록됨' : '즐겨찾기 미등록';
+        document.getElementById('companyChange').className = `change-value ${change >= 0 ? 'up' : 'down'}`;
+        document.getElementById('companyChangePercent').className = `change-percent ${change >= 0 ? 'up' : 'down'}`;
+        setResultVisible(true);
+      } catch (err) {
+        showError(err.message);
+        setResultVisible(false);
+      }
+    }
+
+    loadFavorites();
+    setResultVisible(false);
+  </script>
+</body>
+</html>
